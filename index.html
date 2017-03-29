@@ -1,1 +1,21 @@
-<p>nothing here</p>
+<style>
+body {background-color: black;}
+h1   {color: blue;}
+p    {color: green;}
+button {color:orange;background-color: black;border: none;}
+font-family: "Lucida Console", Monaco, monospace;
+</style>
+
+<p id="canvas_main">
+[INFO] Ready to begin
+</p>
+<button type="button" onclick="doThing();">
+Start
+</button>
+<script>
+function doThing() {
+	var tbox = document.getElementById("canvas_main");
+
+	tbox.innerHTML = "Loading...";
+}
+</script>
