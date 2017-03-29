@@ -1,7 +1,7 @@
 function doThing() {
 	var tbox = document.getElementById("canvas_main");
 
-	tbox.innerHTML = "Loadisng...";
+	tbox.innerHTML = "Test 2";
 }
 function typewriterText(string,tbox){
     tbox.innerHTML+=string
