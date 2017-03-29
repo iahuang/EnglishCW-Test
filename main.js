@@ -1,8 +1,9 @@
 function doThing() {
 	var tbox = document.getElementById("canvas_main");
 
-	tbox.innerHTML = "Loadisng...";
+	tbox.innerHTML = "Test 2";
 }
+<<<<<<< HEAD
 function typewriterText(string,tbox){
     tbox.innerHTML+=string;
 }
@@ -35,3 +36,6 @@ function onStart() {
 		tbox.innerHTML+=text[i];
 	}
 }
+=======
+
+>>>>>>> FETCH_HEAD
