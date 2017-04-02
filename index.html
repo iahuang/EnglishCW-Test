@@ -3,11 +3,21 @@ body {background-color: black;}
 h1   {color: blue;}
 p    {color: green;}
 button {color:orange;background-color: black;border: none;}
-font-family: "Lucida Console", Monaco, monospace;
+@font-face {
+    font-family: DeliciousRoman;
+    src: url(Consolas.ttf);
+    font-weight:400;
+}
+p {
+    font-family: DeliciousRoman, Helvetica, Arial, sans-serif;
+}
+button {
+    font-family: DeliciousRoman, Helvetica, Arial, sans-serif;
+}
 </style>
 
 <p id="canvas_main">
-The Mansion
+    
 </p>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>

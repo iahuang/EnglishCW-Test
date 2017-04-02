@@ -17,7 +17,16 @@ function gameInit() { // Disable the "Next" button and initialize game
 	idiv.style.visibility = 'visible';
 	tbox.innerHTML = "Bloop";
 }
+function writeToBoard(text) {
+	currentOutput = text;
+	outputDone = false;
+	charIndex = 0;
+	tbox.innerHTML = "";
+}
 function onNext() { // When "Next" button is pressed in intro sequence
+	if (!outputDone) {
+		return;
+	}
 	introIndex+=1;
 	var nextButton = document.getElementById("action_button");
 	if (introIndex == strings.length-1) {
@@ -25,16 +34,50 @@ function onNext() { // When "Next" button is pressed in intro sequence
 	}
 	if (introIndex == strings.length) {
 		gameInit();
+		writeToBoard("Bloop");
 		return;
 	}
-	tbox.innerHTML = strings[introIndex];
+	currentOutput = strings[introIndex];
+	outputDone = false;
+	charIndex = 0;
+	tbox.innerHTML = "";
 }
 function onConfirm() {
 	ibox.value = "";
 }
+function onUpdate() {
+	if (currentOutput == "") {
+		return;
+	}
+	currentOutput = currentOutput.replace("&s","&&&&&");
+	if (charIndex < currentOutput.length) {
+		if (currentOutput[charIndex] == "&") {
+			var nextChar = currentOutput[charIndex+1];
+			if (nextChar == "n") {
+				tbox.innerHTML += "<br>";
+			}
+		}
+		else {
+
+			tbox.innerHTML+=currentOutput[charIndex];
+		}
+		charIndex+=1;
+	}
+	else {
+		outputDone = true;
+	}
+
+}
+class Action {
+	constructor(synonyms,onUse) {
+		this.synonyms = synonyms;
+		this.onUse = onUse;
+	}
+}
 class GameObject { // Class for all objects able to be interacted with
 	constructor(synonyms,actions) {
-
+		this.synonyms = synonyms;
+		this.onUse = onUse;
 	}
 }
 class Room {
@@ -50,6 +93,11 @@ idiv.style.visibility = 'hidden';
 var strings = ["foo","This is my first Creative Writing Assigment for Term 3",
 "This is an interactive story programmed in 2 weeks by me",
 "You will be provided with a description of your scenario",
-"Enter the action you want to take in space provided",
+"Enter the action you want to take in the space provided",
 "Press 'Begin' when you are ready to start"];
+var currentOutput = "";
+var outputDone = true;
 var introIndex = 0;
+var charIndex = 0;
+setInterval(function(){onUpdate();},40);
+writeToBoard("Introduction");
