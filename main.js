@@ -17,22 +17,20 @@ function gameInit() { // Disable the "Next" button and initialize game
 	idiv.style.visibility = 'visible';
 	writeToBoard("Starting Game...&n");
 }
-function writeToBoard(text) {
-	var i = 0;
-	while (true) {
-		if (outputDone == true) {
-			break;
+function _write(text) {
+	if (outputDone) {
+		if (outputQueue.length == 0) {
+			return;
 		}
-		i+=1;
-		console.log(i);
-		if (i == 100) {
-			break;
-		}
+		currentOutput = outputQueue[0]+"&n";
+		outputQueue = outputQueue.slice(1,outputQueue.length);
+		outputDone = false;
+		charIndex = 0;
+
 	}
-	currentOutput = text+"&n";
-	outputDone = false;
-	charIndex = 0;
-	//tbox.innerHTML = "";
+}
+function writeToBoard(text) {
+	outputQueue.push(text);
 }
 function onNext() { // When "Next" button is pressed in intro sequence
 	if (!outputDone) {
@@ -111,10 +109,12 @@ var strings = ["foo","This is my first Creative Writing Assigment for Term 3",
 "Enter the action you want to take in the space provided",
 "Press 'Begin' when you are ready to start"];
 var currentOutput = "";
+var outputQueue = [];
 var outputDone = true;
 var introIndex = 0;
 var charIndex = 0;
 setInterval(function(){onUpdate();},40);
+setInterval(function(){_write();},10);
 //writeToBoard("Introduction");
 gameInit();
 writeToBoard(rooms["test_room"].description);
