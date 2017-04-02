@@ -15,13 +15,24 @@ function gameInit() { // Disable the "Next" button and initialize game
 	nextButton.disabled = true;
 	nextButton.innerHTML = "";
 	idiv.style.visibility = 'visible';
-	tbox.innerHTML = "Bloop";
+	writeToBoard("Starting Game...&n");
 }
 function writeToBoard(text) {
-	currentOutput = text;
+	var i = 0;
+	while (true) {
+		if (outputDone == true) {
+			break;
+		}
+		i+=1;
+		console.log(i);
+		if (i == 100) {
+			break;
+		}
+	}
+	currentOutput = text+"&n";
 	outputDone = false;
 	charIndex = 0;
-	tbox.innerHTML = "";
+	//tbox.innerHTML = "";
 }
 function onNext() { // When "Next" button is pressed in intro sequence
 	if (!outputDone) {
@@ -44,6 +55,7 @@ function onNext() { // When "Next" button is pressed in intro sequence
 }
 function onConfirm() {
 	ibox.value = "";
+
 }
 function onUpdate() {
 	if (currentOutput == "") {
@@ -55,6 +67,7 @@ function onUpdate() {
 			var nextChar = currentOutput[charIndex+1];
 			if (nextChar == "n") {
 				tbox.innerHTML += "<br>";
+				charIndex+=1;
 			}
 		}
 		else {
@@ -81,11 +94,13 @@ class GameObject { // Class for all objects able to be interacted with
 	}
 }
 class Room {
-	constructor(name,objects) {
-		this.name = name;
+	constructor(objects,description) {
 		this.objects = objects;
+		this.description = description;
 	}
 }
+
+var rooms = {"test_room":new Room([],"We are number one")};
 var tbox = document.getElementById("canvas_main");
 var ibox = document.getElementById("action_input");
 var idiv = document.getElementById("input_div");
@@ -100,4 +115,6 @@ var outputDone = true;
 var introIndex = 0;
 var charIndex = 0;
 setInterval(function(){onUpdate();},40);
-writeToBoard("Introduction");
+//writeToBoard("Introduction");
+gameInit();
+writeToBoard(rooms["test_room"].description);
