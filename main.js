@@ -105,8 +105,6 @@ function actionGeneric(actionName,onDo,input,useInventory) {
 
 	if (isIn(actions[actionName],input[0])) {
 		if (useInventory != undefined) {
-			console.log(inventory);
-			console.log(lastWord);
 			selectedObj = getGameObjectFromInventory(lastWord);
 		}
 		if (selectedObj == undefined) {
@@ -132,9 +130,9 @@ function actionGo(input) {
 	}
 	var direction = -1;
 	var directions = [
-		['left','l'],
+		['left','l','port'],
 		['forward','f','fwd'],
-		['right','r'],
+		['right','r','starboard'],
 		['back','backwards','b']
 	];
 
@@ -302,16 +300,48 @@ class Room {
 	}
 
 }
-var objectCookie = new GameObject(["cookie","biscuit"],
+
+// Object declarations
+
+var gameObjects = {"cookie":new GameObject(["cookie","biscuit"],
 {"test_room":"There is a cookie sitting on a table.&n\
 First, try throwing the cookie across the room. &n\
 You can do this by typing 'throw the cookie' or simply 'throw cookie'."},"It is an oatmeal-raisin cookie",
-"A generic cookie");
-var rooms = {"test_room":new Room([
-	objectCookie
-],"Welcome to the tutorial.&nThis is an introduction to the way \
-you are able to interact with your enviroment.",[undefined,undefined,"start_room",undefined]),
-"start_room":new Room([],"Test.",[undefined,undefined,undefined,undefined])};
+"A generic cookie")};
+
+function buildRdFile(content) {
+	var lines = content.split("\n");
+	var roomName = lines[0].replace(">","");
+	console.log("Building room "+roomName);
+	var roomObjects = [];
+	var roomDescription = "Error";
+	var roomLinks = [];
+	for (var i=1;i<lines.length;i++) {
+		var line = lines[i];
+		if (line == "") {
+			continue;
+		}
+		if (line.startsWith("obj ")) {
+			roomObjects.push(gameObjects[line.replace("obj ","")]);
+		}
+		if (line.startsWith("desc ")) {
+			roomDescription = line.replace("desc ","");
+		}
+		if (line.startsWith("link ")) {
+			roomLinks = line.replace("link ","");
+		}
+	}
+	rooms[roomName] = new Room(roomObjects,roomDescription,roomLinks);
+}
+var rooms = {};
+var roomFiles = ["test_room"];
+for (var i=0;i<roomFiles.length;i++) {
+    $.ajax({ url: "rooms/"+roomFiles[i]+".rd", async: false, success: function(file_content) {
+        buildRdFile(file_content);
+      }
+    });
+}
+
 var actions = {"examine":["examine","look","check","inspect","read"],
 "eat":["eat","consume"],
 "take":["take","grab","steal","pocket","pick"],
