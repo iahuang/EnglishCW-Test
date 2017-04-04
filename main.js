@@ -22,7 +22,13 @@ function _write(text) {
 		if (outputQueue.length == 0) {
 			return;
 		}
-		currentOutput = outputQueue[0]+"&n";
+		if (outputQueue[0] != "&clear") {
+			currentOutput = outputQueue[0]+"&n";
+		} else {
+			currentOutput = "";
+			tbox.innerHTML = "";
+		}
+
 		outputQueue = outputQueue.slice(1,outputQueue.length);
 		outputDone = false;
 		charIndex = 0;
@@ -165,7 +171,7 @@ function onActionEat(obj,useInventory) {
 	removeFromArray(rooms[currentRoom].objects,obj);
 	removeFromArray(inventory,obj);
 	if (currentRoom == "test_room") {
-		writeToBoard("Great. Now you are finished with the tutorial.&nYou can exit through the door on your right by typing 'go right' or simply 'go r'");
+		writeToBoard("Excellent.&nYou can exit the room through the door on your right by typing 'go right' or simply 'go r'");
 		tutorialState = 3;
 	}
 }
@@ -178,7 +184,7 @@ function onActionTake(obj) {
 	removeFromArray(rooms[currentRoom].objects,obj);
 	if (currentRoom == "test_room" && tutorialState == 1) {
 		tutorialState = 2;
-		writeToBoard("Good job.&nThe cookie has been added to your inventory.&nYou may check your inventory at any time\
+		writeToBoard("Good job!&nThe cookie has been added to your inventory.&nYou may check your inventory at any time\
 		by typing 'inventory'.&nNow, as a reward, you can eat the cookie by typing 'eat cookie'.&s Five second rule, right?");
 	}
 }
@@ -187,12 +193,19 @@ function onActionThrow(obj,useInventory) {
 	removeFromArray(inventory,obj);
 	if (currentRoom == "test_room" && tutorialState == 0) {
 		tutorialState = 1;
-		writeToBoard("Good job. Now pick the cookie off the floor by typing 'pick up cookie', 'take cookie' etc.");
+		writeToBoard("Great!&n\
+		For future reference,&s you can always get more information about an object by typing 'examine <object>'.&n&sNow pick the cookie off the floor by typing 'pick up cookie', 'take cookie' etc.");
 	}
 }
+
 function loadRoom(roomId) {
+	if (currentRoom == "test_room" && tutorialState == 3) {
+		clearBoard();
+		writeToBoard("Tutorial finished.&n");
+	}
 	currentRoom = roomId;
 	rooms[currentRoom].display();
+
 }
 function onConfirm() {
 	if (ibox.value == "") {
@@ -232,6 +245,7 @@ function onConfirm() {
 }
 function onUpdate() {
 	if (currentOutput == "") {
+		outputDone = true;
 		return;
 	}
 	currentOutput = currentOutput.replace("&s","&&&");
@@ -254,7 +268,9 @@ function onUpdate() {
 	}
 
 }
-
+function clearBoard() {
+	outputQueue.push("&clear");
+}
 class GameObject { // Class for all objects able to be interacted with
 	constructor(synonyms,roomDescriptions,description,inventoryDescription) {
 		this.synonyms = synonyms;
@@ -287,7 +303,8 @@ class Room {
 
 }
 var objectCookie = new GameObject(["cookie","biscuit"],
-{"test_room":"There is a cookie sitting on a table.&s First, try throwing the cookie across the room. &n\
+{"test_room":"There is a cookie sitting on a table.&n\
+First, try throwing the cookie across the room. &n\
 You can do this by typing 'throw the cookie' or simply 'throw cookie'."},"It is an oatmeal-raisin cookie",
 "A generic cookie");
 var rooms = {"test_room":new Room([
