@@ -114,7 +114,12 @@ function actionGeneric(actionName,onDo,input,useInventory) {
 			writeToBoard("Could not find: "+lastWord);
 			return true;
 		} else {
-			onDo(selectedObj);
+			if (isIn(selectedObj.allowedActions,actionName)) {
+				onDo(selectedObj);
+			} else {
+				writeToBoard("You cannot "+actionName+" the "+selectedObj.synonyms[0]+".");
+			}
+
 			return true;
 		}
 	}
@@ -130,7 +135,7 @@ function actionGo(input) {
 	var direction = -1;
 	var directions = [
 		['left','l','port'],
-		['forward','f','fwd'],
+		['forward','f','fwd','straight'],
 		['right','r','starboard'],
 		['back','backwards','b']
 	];
@@ -168,7 +173,8 @@ function onActionEat(obj,useInventory) {
 	removeFromArray(rooms[currentRoom].objects,obj);
 	removeFromArray(inventory,obj);
 	if (currentRoom == "test_room") {
-		writeToBoard("Excellent.&nYou can exit the room through the door on your right by typing 'go right' or simply 'go r'");
+		writeToBoard("Excellent.&nYou can exit the room through the door on your right by typing 'go right' or simply 'go r'&n\
+		Please note that all directions in this game are RELATIVE to you");
 		tutorialState = 3;
 	}
 }
@@ -273,11 +279,12 @@ function clearBoard() {
 	outputQueue.push("&clear");
 }
 class GameObject { // Class for all objects able to be interacted with
-	constructor(synonyms,roomDescription,description,inventoryDescription) {
+	constructor(synonyms,roomDescription,description,inventoryDescription,allowedActions) {
 		this.synonyms = synonyms;
 		this.description = description;
 		this.roomDescription = roomDescription;
 		this.inventoryDescription = inventoryDescription;
+		this.allowedActions = allowedActions;
 	}
 }
 class Room {
@@ -310,16 +317,21 @@ var gameObjects = {"cookie":new GameObject(["cookie","biscuit"],
 "There is a cookie sitting on a table.&n\
 First, try throwing the cookie across the room. &n\
 You can do this by typing 'throw the cookie' or simply 'throw cookie'.","It is an oatmeal-raisin cookie",
-"A generic cookie"),
+"A generic cookie",["take","eat","throw"]),
 
-"letter":new GameObject(["letter","envelope"],"There is an envelope sitting in your inbox.","this game isn't finished yet :/","A letter")};
+"letter":new GameObject(["letter","envelope"],"There is a letter sitting in your inbox.","Welcome to Infiltrator, an interactive text-based video game.&n\
+Your goal, as you may have guessed: Infiltrate the enemy base, and hack their servers to gain information.&n\
+The code for this game was written in a matter of days, and may contain bugs.&n\
+The program can also only understand rudimentary commands, and cannot answer questions.&n\
+If you have any questions, comments, or concerns, you may contact me on Schoology or in person.&n\
+Thank you!","A letter",["take","examine"])};
 
 function buildRdFile(content) {
 	var lines = content.split("\n");
 	var roomName = lines[0].replace(">","");
 	console.log("Building room "+roomName);
 	var roomObjects = [];
-	var roomDescription = "Error";
+	var roomDescription = "";
 	var roomLinks = [];
 	for (var i=1;i<lines.length;i++) {
 		var line = lines[i];
@@ -330,7 +342,7 @@ function buildRdFile(content) {
 			roomObjects.push(gameObjects[line.replace("obj>","")]);
 		}
 		if (line.startsWith("desc>")) {
-			roomDescription = line.replace("desc>","");
+			roomDescription += line.replace("desc>","")+"&n";
 		}
 		if (line.startsWith("link>")) {
 			roomLinks = eval(line.replace("link>",""));
@@ -339,7 +351,7 @@ function buildRdFile(content) {
 	rooms[roomName] = new Room(roomObjects,roomDescription,roomLinks);
 }
 var rooms = {};
-var roomFiles = ["test_room","start_room"];
+var roomFiles = ["test_room","start_room","outside_1"];
 for (var i=0;i<roomFiles.length;i++) {
     $.ajax({ url: "rooms/"+roomFiles[i]+".rd", async: false, success: function(file_content) {
         buildRdFile(file_content);
