@@ -321,20 +321,20 @@ function buildRdFile(content) {
 		if (line == "") {
 			continue;
 		}
-		if (line.startsWith("obj ")) {
-			roomObjects.push(gameObjects[line.replace("obj ","")]);
+		if (line.startsWith("obj>")) {
+			roomObjects.push(gameObjects[line.replace("obj>","")]);
 		}
-		if (line.startsWith("desc ")) {
-			roomDescription = line.replace("desc ","");
+		if (line.startsWith("desc>")) {
+			roomDescription = line.replace("desc>","");
 		}
-		if (line.startsWith("link ")) {
-			roomLinks = line.replace("link ","");
+		if (line.startsWith("link>")) {
+			roomLinks = eval(line.replace("link>",""));
 		}
 	}
 	rooms[roomName] = new Room(roomObjects,roomDescription,roomLinks);
 }
 var rooms = {};
-var roomFiles = ["test_room"];
+var roomFiles = ["test_room","start_room"];
 for (var i=0;i<roomFiles.length;i++) {
     $.ajax({ url: "rooms/"+roomFiles[i]+".rd", async: false, success: function(file_content) {
         buildRdFile(file_content);
