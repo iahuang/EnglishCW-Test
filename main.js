@@ -118,7 +118,6 @@ function actionGeneric(actionName,onDo,input,useInventory) {
 			return true;
 		}
 	}
-
 	return false;
 }
 function actionGo(input) {
@@ -199,7 +198,9 @@ function onActionThrow(obj,useInventory) {
 function loadRoom(roomId) {
 	if (currentRoom == "test_room" && tutorialState == 3) {
 		clearBoard();
-		writeToBoard("Tutorial finished.&n");
+		writeToBoard("Tutorial finished.&n&s&s&s&s&s");
+		clearBoard();
+		writeToBoard("&s&s&s&sYou are an agent working for the Xestelian government. ");
 	}
 	currentRoom = roomId;
 	rooms[currentRoom].display();
@@ -211,6 +212,7 @@ function onConfirm() {
 	}
 	var input = ibox.value.toLocaleLowerCase().split(" ");
 	var lastWord = input[input.length-1];
+
 	if (isIn(input,"please")) {
 		writeToBoard("How polite of you. However, it is recommended that you make your actions as concise as possible.");
 	} else if (actionGo(input)) {
@@ -225,7 +227,7 @@ function onConfirm() {
 				writeToBoard("- "+item.inventoryDescription);
 			}
 		}
-	} else if (actionGeneric("examine",onActionExamine,input)) {
+	} else if (actionGeneric("examine",onActionExamine,input,true)) {
 	} else if (actionGeneric("eat",onActionEat,input,true)) {
 	} else if (actionGeneric("take",onActionTake,input)) {
 	} else if (actionGeneric("throw",onActionThrow,input,true)) {
@@ -266,14 +268,15 @@ function onUpdate() {
 	}
 
 }
+
 function clearBoard() {
 	outputQueue.push("&clear");
 }
 class GameObject { // Class for all objects able to be interacted with
-	constructor(synonyms,roomDescriptions,description,inventoryDescription) {
+	constructor(synonyms,roomDescription,description,inventoryDescription) {
 		this.synonyms = synonyms;
 		this.description = description;
-		this.roomDescriptions = roomDescriptions;
+		this.roomDescription = roomDescription;
 		this.inventoryDescription = inventoryDescription;
 	}
 }
@@ -295,7 +298,7 @@ class Room {
 
 		for (var i=0;i<this.objects.length;i++) {
 			var object = this.objects[i];
-			writeToBoard(object.roomDescriptions[this.getId()]);
+			writeToBoard(object.roomDescription);
 		}
 	}
 
@@ -304,10 +307,12 @@ class Room {
 // Object declarations
 
 var gameObjects = {"cookie":new GameObject(["cookie","biscuit"],
-{"test_room":"There is a cookie sitting on a table.&n\
+"There is a cookie sitting on a table.&n\
 First, try throwing the cookie across the room. &n\
-You can do this by typing 'throw the cookie' or simply 'throw cookie'."},"It is an oatmeal-raisin cookie",
-"A generic cookie")};
+You can do this by typing 'throw the cookie' or simply 'throw cookie'.","It is an oatmeal-raisin cookie",
+"A generic cookie"),
+
+"letter":new GameObject(["letter","envelope"],"There is an envelope sitting in your inbox.","this game isn't finished yet :/","A letter")};
 
 function buildRdFile(content) {
 	var lines = content.split("\n");
@@ -365,7 +370,7 @@ var charIndex = 0;
 
 var tutorialState = 0;
 
-currentRoom = "test_room";
+currentRoom = "start_room";
 
 setInterval(function(){onUpdate();},30);
 setInterval(function(){_write();},10);

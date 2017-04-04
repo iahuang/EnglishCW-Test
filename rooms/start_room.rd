@@ -1,3 +1,4 @@
 >start_room
-desc>You are in a room where absolutely nothing happens
-link>[undefined,undefined,undefined,"test_room"]
+obj>letter
+desc>You are sitting at your desk.
+link>[undefined,undefined,undefined,undefined]
