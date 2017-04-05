@@ -245,8 +245,8 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 function onHurt() {
-	var damage = getRandomInt(2,5);
-	writeImmediate("Ouch! -"+damage+" health");
+	var damage = getRandomInt(1,3);
+	writeImmediate("Ouch! You lost "+damage+" health");
 	plrHealth-=damage;
 	if (plrHealth <= 0) {
 		exitCombat(true);
@@ -303,7 +303,13 @@ function onConfirm() {
 		if (action == "s") {
 			if (battleTick <= 2000) {
 				var damage = getRandomInt(2,6);
-				writeImmediate("POW! Dealt "+damage+" damage");
+				var loc = "";
+				if (damage > 4) {
+					loc = "kick to the face!";
+				} else {
+					loc = "punch to the gut!";
+				}
+				writeImmediate("You deliver a swift "+loc);
 				enemyHealth-=damage;
 				if (!firstTurn) {
 					if (onHurt()) {
@@ -312,7 +318,13 @@ function onConfirm() {
 				}
 				if (enemyHealth <= 0) {
 					writeToBoard("You win!");
+					if (currentRoom == "outside_1") {
+						roomFlags["outsideGuardsDead"] = true;
+						rooms[currentRoom].description = "You are on a hill overlooking the enemy base.&nThe entrance is now unguarded.";
+						rooms[currentRoom].connected[1] = "base_1";
+					}
 					exitCombat();
+					loadRoom(currentRoom);
 				}
 			} else {
 				writeImmediate("Blocked.");
@@ -322,41 +334,52 @@ function onConfirm() {
 			}
 		} else if (action == "b") {
 			if (battleTick <= 1500) {
-				writeImmediate("Blocked!");
+				writeImmediate("You deflect the bullet with your electromagnetic gauntlet!");
 			} else {
-				writeImmediate("Block failed");
+				writeImmediate("You try to deflect the bullet with your electromagnetic gauntlet, but you don't react in time!");
 				if (!firstTurn) {
 					onHurt();
 				}
 			}
 		} else if (action == "j") {
 			if (battleTick <= 1000) {
-				writeImmediate("Dodged! Enemy is off-balance and cannot hurt you for another turn!");
+				writeImmediate("You quickly jump back, and the plasma bolt flies past you harmlessly.<br>The guard stumbles for a moment.");
 				firstTurn = true;
 			} else {
-				writeImmediate("Dodge failed!");
+				writeImmediate("You fail to react in time and are hit with the bullet!");
 				if (!firstTurn) {
 					onHurt();
 				}
 			}
-		} else if (action == "j") {
+		} else if (action == "d") {
 			if (battleTick <= 500) {
-				writeImmediate("Disarmed!");
-				enemyState = "disarmed";
+				if (enemyState != "disarmed") {
+					writeImmediate("You violently kick the gun out of the man's hand!<br>It falls uselessly to the ground.");
+					enemyState = "disarmed";
+				} else {
+					writeImmediate("You've already disarmed the guard");
+				}
+
 			} else {
-				writeImmediate("Missed!");
+				writeImmediate("You make a kick at the his weapon, but the guard had time to react!");
 				if (!firstTurn) {
 					onHurt();
 				}
 			}
+		} else {
+			writeImmediate("Unknown action!")
 		}
 		battleTick = 0;
 		if (enemyState == "onguard") {
-			writeImmediate("Enemy shoots!");
+			writeImmediate("The guard fires at you!");
 		} else {
-			writeImmediate("Enemy is unable to strike!")
+			writeImmediate("The guard is disarmed and unable to fire!")
 		}
-		firstTurn = false;
+		if (firstTurn) {
+			firstTurn = false;
+			writeImmediate("The guard raises his weapon to fire.");
+		}
+
 
 	}
 	else {
@@ -490,7 +513,7 @@ function exitCombat(dead) {
 	enemyHealth = 10;
 }
 var rooms = {};
-var roomFiles = ["test_room","start_room","outside_1"];
+var roomFiles = ["test_room","start_room","outside_1","base_1"];
 for (var i=0;i<roomFiles.length;i++) {
     $.ajax({ url: "rooms/"+roomFiles[i]+".rd", async: false, success: function(file_content) {
         buildRdFile(file_content);
@@ -528,7 +551,7 @@ var tutorialState = 0;
 
 var startingLoadout = ["bomb"];
 
-currentRoom = "start_room";
+currentRoom = "outside_1";
 
 setInterval(function(){onUpdate();},20);
 setInterval(function(){_write();},10);
