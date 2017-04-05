@@ -528,7 +528,7 @@ var tutorialState = 0;
 
 var startingLoadout = ["bomb"];
 
-currentRoom = "outside_1";
+currentRoom = "start_room";
 
 setInterval(function(){onUpdate();},20);
 setInterval(function(){_write();},10);
