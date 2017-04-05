@@ -99,6 +99,13 @@ function getGameObjectFromInventory(name) {
 	}
 	return undefined;
 }
+function writeImmediate(string) {
+	if (outputDone) {
+		tbox.innerHTML+=string+"<br>";
+	} else {
+		tbox.innerHTML+="...<br>"+string+"<br>...";
+	}
+}
 function actionGeneric(actionName,onDo,input,useInventory) {
 	var lastWord = input[input.length-1];
 	var selectedObj;
@@ -131,6 +138,9 @@ function actionGo(input) {
 	}
 	if (tutorialLimiter(3)) {
 		return true;
+	}
+	if (inCombat) {
+		writeToBoard("You cannot flee while in combat");
 	}
 	var direction = -1;
 	var directions = [
@@ -199,6 +209,17 @@ function onActionThrow(obj,useInventory) {
 		writeToBoard("Great!&n\
 		For future reference,&s you can always get more information about an object by typing 'examine <object>'.&n&sNow pick the cookie off the floor by typing 'pick up cookie', 'take cookie' etc.");
 	}
+	if (obj.synonyms[0] == "bomb") {
+		writeToBoard("The bomb exploded.&s&s");
+	}
+	if (currentRoom == "outside_1" && !roomFlags["outsideGuardsDead"]) {
+		writeToBoard("You hear a shout, but no explosion.&n&sIt appears the guard had vaporized the bomb before it detonated.&s");
+		writeToBoard("Did you honestly think it would be that easy?&s&s");
+		writeToBoard("You see flashlights sweep the air.&nYou are suddenly illuminated by a blinding beam of light.&s");
+		writeToBoard("The guard comes running up the hill at you.&s");
+		enterCombat();
+		writeToBoard("Type help for information on combat");
+	}
 }
 
 function loadRoom(roomId) {
@@ -206,11 +227,32 @@ function loadRoom(roomId) {
 		clearBoard();
 		writeToBoard("Tutorial finished.&n&s&s&s&s&s");
 		clearBoard();
-		writeToBoard("&s&s&s&sYou are an agent working for the Xestelian government. ");
+		writeToBoard("&s&s&s&sWelcome to Infiltrator, an interactive text-based video game.&n\
+		Your goal, as you may have guessed: Infiltrate the enemy base, and destroy it.&n&s. ");
 	}
 	currentRoom = roomId;
 	rooms[currentRoom].display();
 
+}
+function equip(items) {
+	inventory = [];
+
+	for (var i=0;i<items.length;i++) {
+		inventory.push(gameObjects[items[i]]);
+	}
+}
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function onHurt() {
+	var damage = getRandomInt(2,5);
+	writeImmediate("Ouch! -"+damage+" health");
+	plrHealth-=damage;
+	if (plrHealth <= 0) {
+		exitCombat(true);
+		return true;
+	}
+	return false;
 }
 function onConfirm() {
 	if (ibox.value == "") {
@@ -238,9 +280,83 @@ function onConfirm() {
 	} else if (actionGeneric("take",onActionTake,input)) {
 	} else if (actionGeneric("throw",onActionThrow,input,true)) {
 	} else if (input[0] == "help") {
-		writeToBoard("Useful actions you can do at any time:&n&n\
-		- Inventory: List all items in your inventory&n\
-		- Clear: Clear all text");
+		if (inCombat) {
+			writeToBoard("This is how combat works:&n");
+			writeToBoard("You can make any action you want, including combat-exclusive actions.");
+			writeToBoard("However, taking a combat action will prompt your opponent to take an action as well.");
+			writeToBoard("The combat-exclusive actions are as follows:&n\
+			s (strike opponent with active weapon; fist by default)&n\
+			b (block with your)&n\
+			j (jump back;dodge)&n\
+			d (disarm enemy)");
+			writeToBoard("Type the abreviated action to perform it.&nThe quicker, the more effective.&n\
+			For instance, if the enemy swings a sword at you, and you do not dodge quick enough, the dodge will fail.");
+		} else{
+			writeToBoard("Useful actions you can do at any time:&n&n\
+			- Inventory: List all items in your inventory&n\
+			- Clear: Clear all text");
+		}
+
+
+	} else if (inCombat) {
+		var action = input[0];
+		if (action == "s") {
+			if (battleTick <= 2000) {
+				var damage = getRandomInt(2,6);
+				writeImmediate("POW! Dealt "+damage+" damage");
+				enemyHealth-=damage;
+				if (!firstTurn) {
+					if (onHurt()) {
+						return;
+					}
+				}
+				if (enemyHealth <= 0) {
+					writeToBoard("You win!");
+					exitCombat();
+				}
+			} else {
+				writeImmediate("Blocked.");
+				if (!firstTurn) {
+					onHurt();
+				}
+			}
+		} else if (action == "b") {
+			if (battleTick <= 1500) {
+				writeImmediate("Blocked!");
+			} else {
+				writeImmediate("Block failed");
+				if (!firstTurn) {
+					onHurt();
+				}
+			}
+		} else if (action == "j") {
+			if (battleTick <= 1000) {
+				writeImmediate("Dodged! Enemy is off-balance and cannot hurt you for another turn!");
+				firstTurn = true;
+			} else {
+				writeImmediate("Dodge failed!");
+				if (!firstTurn) {
+					onHurt();
+				}
+			}
+		} else if (action == "j") {
+			if (battleTick <= 500) {
+				writeImmediate("Disarmed!");
+				enemyState = "disarmed";
+			} else {
+				writeImmediate("Missed!");
+				if (!firstTurn) {
+					onHurt();
+				}
+			}
+		}
+		battleTick = 0;
+		if (enemyState == "onguard") {
+			writeImmediate("Enemy shoots!");
+		} else {
+			writeImmediate("Enemy is unable to strike!")
+		}
+		firstTurn = false;
 
 	}
 	else {
@@ -254,7 +370,7 @@ function onUpdate() {
 		outputDone = true;
 		return;
 	}
-	currentOutput = currentOutput.replace("&s","&&&");
+	currentOutput = currentOutput.replace("&s","&&&&&&&&&&&&&&&");
 	if (charIndex < currentOutput.length) {
 		if (currentOutput[charIndex] == "&") {
 			var nextChar = currentOutput[charIndex+1];
@@ -308,9 +424,11 @@ class Room {
 			writeToBoard(object.roomDescription);
 		}
 	}
+}
+function battleUpdate() {
+	battleTick += 10; // in milliseconds
 
 }
-
 // Object declarations
 
 var gameObjects = {"cookie":new GameObject(["cookie","biscuit"],
@@ -319,12 +437,15 @@ First, try throwing the cookie across the room. &n\
 You can do this by typing 'throw the cookie' or simply 'throw cookie'.","It is an oatmeal-raisin cookie",
 "A generic cookie",["take","eat","throw"]),
 
-"letter":new GameObject(["letter","envelope"],"There is a letter sitting in your inbox.","Welcome to Infiltrator, an interactive text-based video game.&n\
-Your goal, as you may have guessed: Infiltrate the enemy base, and hack their servers to gain information.&n\
+"letter":new GameObject(["letter","envelope"],"There is a letter sitting in your inbox.","Dear reader,&n&n\
 The code for this game was written in a matter of days, and may contain bugs.&n\
 The program can also only understand rudimentary commands, and cannot answer questions.&n\
 If you have any questions, comments, or concerns, you may contact me on Schoology or in person.&n\
-Thank you!","A letter",["take","examine"])};
+Thank you!","A letter",["take","examine"]),
+
+"bomb":new GameObject(["bomb"],"There is an unactivated bomb on the ground.","A bomb, when detonated, emits a short blast of highly concentrated gamma radiation, blinding, and destroying the nervous cells of, any living organisms within 15 feet.","A radiation bomb",["take","examine","throw"])};
+
+var roomFlags = {"outsideGuardsDead":false};
 
 function buildRdFile(content) {
 	var lines = content.split("\n");
@@ -350,6 +471,24 @@ function buildRdFile(content) {
 	}
 	rooms[roomName] = new Room(roomObjects,roomDescription,roomLinks);
 }
+function enterCombat() {
+	inCombat = true;
+	writeToBoard("&n------You are now in combat-------");
+	tickCount = 0;
+	firstTurn = true;
+}
+function exitCombat(dead) {
+	inCombat = false;
+	if (dead == undefined) {
+		writeToBoard("&n------Exiting combat-------&nYou have "+plrHealth+"/20 health");
+	} else {
+		writeToBoard("&n------You died-------");
+		loadRoom("start_room");
+		plrHealth = 20;
+	}
+	enemyState = "onguard";
+	enemyHealth = 10;
+}
 var rooms = {};
 var roomFiles = ["test_room","start_room","outside_1"];
 for (var i=0;i<roomFiles.length;i++) {
@@ -358,7 +497,12 @@ for (var i=0;i<roomFiles.length;i++) {
       }
     });
 }
-
+var inCombat = false;
+var enemyState = "onguard";
+var enemyHealth = 10;
+var plrHealth = 20;
+var battleTick = 0;
+var firstTurn = true;
 var actions = {"examine":["examine","look","check","inspect","read"],
 "eat":["eat","consume"],
 "take":["take","grab","steal","pocket","pick"],
@@ -382,10 +526,14 @@ var charIndex = 0;
 
 var tutorialState = 0;
 
-currentRoom = "start_room";
+var startingLoadout = ["bomb"];
 
-setInterval(function(){onUpdate();},30);
+currentRoom = "outside_1";
+
+setInterval(function(){onUpdate();},20);
 setInterval(function(){_write();},10);
+setInterval(function(){battleUpdate();},10);
 //writeToBoard("Introduction");
 gameInit();
 loadRoom(currentRoom);
+equip(startingLoadout);
