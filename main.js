@@ -1,5 +1,5 @@
 /*
-The Mansion
+Infiltrator
 
 An interactive text-based adventure game programmed for 8th grade English class
 Made by Ian Huang
@@ -217,9 +217,7 @@ function onActionThrow(obj,useInventory) {
 		writeToBoard("Great!&n\
 		For future reference,&s you can always get more information about an object by typing 'examine <object>'.&n&sNow pick the cookie off the floor by typing 'pick up cookie', 'take cookie' etc.");
 	}
-	if (obj.synonyms[0] == "bomb") {
-		writeToBoard("The bomb exploded.&s&s");
-	}
+
 	if (currentRoom == "outside_1" && !roomFlags["outsideGuardsDead"]) {
 		writeToBoard("You hear a shout, but no explosion.&n&sIt appears the guard had vaporized the bomb before it detonated.&s");
 		writeToBoard("Did you honestly think it would be that easy?&s&s");
@@ -247,6 +245,9 @@ function loadRoom(roomId) {
 	}
 	currentRoom = roomId;
 	rooms[currentRoom].display();
+	if (currentRoom == "base_vent_1") {
+		idiv.style.visibility = "hidden";
+	}
 
 }
 function equip(items) {
@@ -557,7 +558,7 @@ var actions = {"examine":["examine","look","check","inspect","read"],
 "eat":["eat","consume"],
 "take":["take","grab","steal","pocket","pick","remove"],
 "throw":["throw","hurl","chuck","toss"],
-"go":["go","move"],
+"go":["go","move","enter","run","walk"],
 "break":["break","destroy"]};
 var inventory = [];
 var tbox = document.getElementById("canvas_main");
@@ -579,7 +580,7 @@ var tutorialState = 0;
 
 var startingLoadout = ["bomb"];
 
-currentRoom = "base_1";
+currentRoom = "test_room";
 
 setInterval(function(){onUpdate();},20);
 setInterval(function(){_write();},10);
