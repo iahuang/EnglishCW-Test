@@ -15,7 +15,7 @@ function gameInit() { // Disable the "Next" button and initialize game
 	nextButton.disabled = true;
 	nextButton.innerHTML = "";
 	idiv.style.visibility = 'visible';
-	writeToBoard("Starting Game...&nType help at anytime for a list of useful actions&n");
+	writeToBoard("Starting Game...&nType help at anytime for a list of useful actions or type clear to clear the board.&n");
 }
 function _write(text) {
 	if (outputDone) {
@@ -151,6 +151,11 @@ function actionGo(input) {
 	];
 
 	var proposedDirection = input[input.length-1];
+	proposedDirection = rooms[currentRoom].aliases[proposedDirection];
+
+	if (proposedDirection == undefined) {
+		proposedDirection = input[input.length-1];
+	}
 
 	for (var i=0;i<directions.length;i++) {
 		if (isIn(directions[i],proposedDirection)) {
@@ -200,6 +205,9 @@ function onActionTake(obj) {
 		writeToBoard("Good job!&nThe cookie has been added to your inventory.&nYou may check your inventory at any time\
 		by typing 'inventory'.&nNow, as a reward, you can eat the cookie by typing 'eat cookie'.&s Five second rule, right?");
 	}
+	if (currentRoom == "base_1" && obj.synonyms[0] == "vent") {
+		rooms[currentRoom].connected[0] = "base_vent_1";
+	}
 }
 function onActionThrow(obj,useInventory) {
 	writeToBoard("You threw the "+obj.synonyms[0]);
@@ -221,7 +229,14 @@ function onActionThrow(obj,useInventory) {
 		writeToBoard("Type help for information on combat");
 	}
 }
-
+function onActionBreak(obj) {
+	writeToBoard("You broke the "+obj.synonyms[0]+".");
+	removeFromArray(inventory,obj);
+	removeFromArray(rooms[currentRoom].objects,obj);
+	if (currentRoom == "base_1" && obj.synonyms[0] == "vent") {
+		rooms[currentRoom].connected[0] = "base_vent_1";
+	}
+}
 function loadRoom(roomId) {
 	if (currentRoom == "test_room" && tutorialState == 3) {
 		clearBoard();
@@ -279,6 +294,7 @@ function onConfirm() {
 	} else if (actionGeneric("eat",onActionEat,input,true)) {
 	} else if (actionGeneric("take",onActionTake,input)) {
 	} else if (actionGeneric("throw",onActionThrow,input,true)) {
+	} else if (actionGeneric("break",onActionBreak,input,true)) {
 	} else if (input[0] == "help") {
 		if (inCombat) {
 			writeToBoard("This is how combat works:&n");
@@ -296,6 +312,8 @@ function onConfirm() {
 			- Inventory: List all items in your inventory&n\
 			- Clear: Clear all text");
 		}
+	} else if (input[0] == "clear") {
+		clearBoard();
 
 
 	} else if (inCombat) {
@@ -427,10 +445,11 @@ class GameObject { // Class for all objects able to be interacted with
 	}
 }
 class Room {
-	constructor(objects,description,connected) {
+	constructor(objects,description,connected,aliases) {
 		this.objects = objects;
 		this.description = description;
 		this.connected = connected;
+		this.aliases = aliases;
 	}
 	getId() {
 		for (var room in rooms) {
@@ -466,7 +485,10 @@ The program can also only understand rudimentary commands, and cannot answer que
 If you have any questions, comments, or concerns, you may contact me on Schoology or in person.&n\
 Thank you!","A letter",["take","examine"]),
 
-"bomb":new GameObject(["bomb"],"There is an unactivated bomb on the ground.","A bomb, when detonated, emits a short blast of highly concentrated gamma radiation, blinding, and destroying the nervous cells of, any living organisms within 15 feet.","A radiation bomb",["take","examine","throw"])};
+"bomb":new GameObject(["bomb"],"There is an unactivated bomb on the ground.","A bomb, when detonated, emits a short blast of highly concentrated gamma radiation, blinding, and destroying the nervous cells of, any living organisms within 15 feet.","A radiation bomb",["take","examine","throw"]),
+
+"vent":new GameObject(["vent"],"There is a flimsy looking vent loosely screwed into the wall to your left.","A flimsy vent.&nYou should be able to remove it easily.","A flimsy vent",["break","take","examine"])
+};
 
 var roomFlags = {"outsideGuardsDead":false};
 
@@ -477,6 +499,7 @@ function buildRdFile(content) {
 	var roomObjects = [];
 	var roomDescription = "";
 	var roomLinks = [];
+	var aliases = {};
 	for (var i=1;i<lines.length;i++) {
 		var line = lines[i];
 		if (line == "") {
@@ -491,8 +514,12 @@ function buildRdFile(content) {
 		if (line.startsWith("link>")) {
 			roomLinks = eval(line.replace("link>",""));
 		}
+		if (line.startsWith("alias>")) {
+			var pair = line.replace("alias>","").split(",");
+			aliases[pair[0]] = pair[[1]];
+		}
 	}
-	rooms[roomName] = new Room(roomObjects,roomDescription,roomLinks);
+	rooms[roomName] = new Room(roomObjects,roomDescription,roomLinks,aliases);
 }
 function enterCombat() {
 	inCombat = true;
@@ -513,7 +540,7 @@ function exitCombat(dead) {
 	enemyHealth = 10;
 }
 var rooms = {};
-var roomFiles = ["test_room","start_room","outside_1","base_1"];
+var roomFiles = ["test_room","start_room","outside_1","base_1","base_vent_1"];
 for (var i=0;i<roomFiles.length;i++) {
     $.ajax({ url: "rooms/"+roomFiles[i]+".rd", async: false, success: function(file_content) {
         buildRdFile(file_content);
@@ -528,9 +555,10 @@ var battleTick = 0;
 var firstTurn = true;
 var actions = {"examine":["examine","look","check","inspect","read"],
 "eat":["eat","consume"],
-"take":["take","grab","steal","pocket","pick"],
+"take":["take","grab","steal","pocket","pick","remove"],
 "throw":["throw","hurl","chuck","toss"],
-"go":["go","move"]};
+"go":["go","move"],
+"break":["break","destroy"]};
 var inventory = [];
 var tbox = document.getElementById("canvas_main");
 var ibox = document.getElementById("action_input");
@@ -540,7 +568,7 @@ var strings = ["foo","This is my first Creative Writing Assigment for Term 3",
 "This is an interactive story programmed in 2 weeks by me",
 "You will be provided with a description of your scenario",
 "Enter the action you want to take in the space provided",
-"Press 'Begin' when you are ready to start"];
+"  'Begin' when you are ready to start"];
 var currentOutput = "";
 var outputQueue = [];
 var outputDone = true;
@@ -551,7 +579,7 @@ var tutorialState = 0;
 
 var startingLoadout = ["bomb"];
 
-currentRoom = "start_room";
+currentRoom = "base_1";
 
 setInterval(function(){onUpdate();},20);
 setInterval(function(){_write();},10);

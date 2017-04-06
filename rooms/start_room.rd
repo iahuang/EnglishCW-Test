@@ -6,3 +6,4 @@ desc>a somewhat messy arrangement of papers, boxes, wires, and scrap metal piled
 desc>There is a rusted metal door in front of you.
 desc>Once you go outside, you cannot go back.
 link>[undefined,"outside_1",undefined,undefined]
+alias>door,f
